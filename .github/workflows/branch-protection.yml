@@ -1,0 +1,36 @@
+name: Branch Protection
+
+on:
+  # Se déclenche quand une nouvelle branche de correction est créée
+  create:
+    branches:
+      - 'corrections/**'
+
+permissions:
+  contents: write
+  administration: write
+
+jobs:
+  protect-branch:
+    runs-on: ubuntu-latest
+    if: github.event.ref_type == 'branch' && startsWith(github.event.ref, 'corrections/')
+    steps:
+      - name: Protect candidate branch
+        uses: octokit/request-action@v2.x
+        with:
+          route: PUT /repos/${{ github.repository }}/branches/${{ github.event.ref }}/protection
+          mediaType: '{"previews": ["luke-cage"]}'
+          required_status_checks: null
+          enforce_admins: true
+          required_pull_request_reviews: null
+          restrictions: null
+          allow_force_pushes: false
+          allow_deletions: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Log branch protection
+        run: |
+          echo "Protected branch: ${{ github.event.ref }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Created by: ${{ github.actor }}"

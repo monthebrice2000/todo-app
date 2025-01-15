@@ -1,0 +1,120 @@
+name: Correction Access Management
+
+on:
+  repository_dispatch:
+    types: [correction_access_requested]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  process-correction-access:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Event
+        env:
+          EVENT_DATA: ${{ toJSON(github.event) }}
+        run: |
+          echo "Event data received:"
+          echo "$EVENT_DATA"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Create custom branch
+        env:
+          CANDIDATE_EMAIL: ${{ github.event.client_payload.email }}
+          FEATURE_NAME: ${{ github.event.client_payload.feature }}
+          ACCESS_CODE: ${{ github.event.client_payload.access_code }}
+          BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
+        run: |
+          echo "Starting branch creation..."
+          echo "Email: $CANDIDATE_EMAIL"
+          echo "Feature: $FEATURE_NAME"
+          echo "Branch: $BRANCH_NAME"
+          
+          # Configuration Git
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          
+          # Récupérer toutes les branches
+          git fetch origin
+          
+          # Créer la nouvelle branche depuis feature/task-tags
+          echo "Creating branch from feature/task-tags..."
+          git checkout -b "$BRANCH_NAME" "origin/feature/task-tags"
+          
+          # Créer le README
+          cat > README-CORRECTION.md << EOF
+          # Correction de la feature ${FEATURE_NAME}
+          
+          Cette branche a été générée automatiquement suite à votre demande d'accès.
+          
+          ## Informations
+          - Code d'accès : ${ACCESS_CODE}
+          - Date de génération : $(date '+%Y-%m-%d %H:%M:%S')
+          - Email : ${CANDIDATE_EMAIL}
+          
+          ## Important
+          - Cette branche est en lecture seule
+          - Ne pas pousser de modifications
+          - Retournez à votre branche après consultation
+          
+          ## Pour revenir à votre branche
+          \`\`\`bash
+          git checkout votre-branche-de-travail
+          \`\`\`
+          EOF
+          
+          # Commit et push
+          git add README-CORRECTION.md
+          git commit -m "docs: Add correction instructions"
+          git push origin "$BRANCH_NAME"
+          
+          # Stocker le nom de la branche pour l'étape suivante
+          echo "CREATED_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Protect branch
+        run: |
+          echo "Protecting branch ${{ env.CREATED_BRANCH }}..."
+          curl -L \
+            -X PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/branches/${{ env.CREATED_BRANCH }}/protection" \
+            -d '{
+              "required_status_checks": null,
+              "enforce_admins": true,
+              "required_pull_request_reviews": null,
+              "restrictions": null,
+              "allow_force_pushes": false,
+              "allow_deletions": false,
+              "required_linear_history": true,
+              "allow_fork_syncing": false
+            }'
+
+      - name: Verify protection
+        run: |
+          echo "Verifying branch protection..."
+          PROTECTION_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/branches/${{ env.CREATED_BRANCH }}/protection")
+          
+          if [ "$PROTECTION_STATUS" = "200" ]; then
+            echo "Branch protection verified successfully!"
+          else
+            echo "Warning: Branch protection status code: $PROTECTION_STATUS"
+          fi
+
+      - name: Debug final status
+        run: |
+          echo "Branch ${{ env.CREATED_BRANCH }} created and protected"
+          git branch -a
