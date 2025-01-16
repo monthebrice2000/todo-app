@@ -1,25 +1,122 @@
-// backend/routes/todos.js
-
 const express = require('express');
 const router = express.Router();
 const Todo = require('../models/Todo');
+const Tag = require('../models/Tag');
 
-// GET all todos
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Todo:
+ *       type: object
+ *       required:
+ *         - title
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: The auto-generated id of the todo
+ *         title:
+ *           type: string
+ *           description: The title of the todo
+ *         completed:
+ *           type: boolean
+ *           description: The completion status of the todo
+ *         position:
+ *           type: number
+ *           description: The position of the todo
+ *         tags:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Tag'
+ *       example:
+ *         id: d5fE_asz
+ *         title: Buy groceries
+ *         completed: false
+ *         position: 1
+ *         tags: []
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Todos
+ *   description: The todos managing API
+ */
+
+/**
+ * @swagger
+ * /api/todos:
+ *   get:
+ *     summary: Returns the list of all the todos
+ *     tags: [Todos]
+ *     responses:
+ *       200:
+ *         description: The list of the todos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Todo'
+ */
 router.get('/', async (req, res) => {
     try {
-        const todos = await Todo.find().sort('position').exec();
+        const todos = await Todo.find().sort('position').populate('tags').exec();
         res.json(todos);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// GET one todo
+/**
+ * @swagger
+ * /api/todos/{id}:
+ *   get:
+ *     summary: Get the todo by id
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The todo id
+ *     responses:
+ *       200:
+ *         description: The todo description by id
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Todo'
+ *       404:
+ *         description: The todo was not found
+ */
 router.get('/:id', getTodo, (req, res) => {
     res.json(res.todo);
 });
 
-// CREATE a todo
+/**
+ * @swagger
+ * /api/todos:
+ *   post:
+ *     summary: Create a new todo
+ *     tags: [Todos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Todo'
+ *     responses:
+ *       201:
+ *         description: The todo was successfully created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Todo'
+ *       400:
+ *         description: Bad request
+ */
 router.post('/', async (req, res) => {
     try {
         const maxPositionTodo = await Todo.findOne().sort('-position').exec();
@@ -27,7 +124,8 @@ router.post('/', async (req, res) => {
 
         const todo = new Todo({
             title: req.body.title,
-            position: newPosition
+            position: newPosition,
+            tags: req.body.tags
         });
         const newTodo = await todo.save();
         res.status(201).json(newTodo);
@@ -36,13 +134,46 @@ router.post('/', async (req, res) => {
     }
 });
 
-// UPDATE a todo
+/**
+ * @swagger
+ * /api/todos/{id}:
+ *   patch:
+ *     summary: Update the todo by the id
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The todo id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Todo'
+ *     responses:
+ *       200:
+ *         description: The todo was updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Todo'
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: The todo was not found
+ */
 router.patch('/:id', getTodo, async (req, res) => {
     if (req.body.title != null) {
         res.todo.title = req.body.title;
     }
     if (req.body.completed != null) {
         res.todo.completed = req.body.completed;
+    }
+    if (req.body.tags != null) {
+        res.todo.tags = req.body.tags;
     }
     try {
         const updatedTodo = await res.todo.save();
@@ -52,7 +183,25 @@ router.patch('/:id', getTodo, async (req, res) => {
     }
 });
 
-// DELETE a todo
+/**
+ * @swagger
+ * /api/todos/{id}:
+ *   delete:
+ *     summary: Remove the todo by id
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The todo id
+ *     responses:
+ *       200:
+ *         description: The todo was deleted
+ *       500:
+ *         description: Server error
+ */
 router.delete('/:id', getTodo, async (req, res) => {
     try {
         const deletedTodo = await Todo.findById(req.params.id);
@@ -70,7 +219,31 @@ router.delete('/:id', getTodo, async (req, res) => {
     }
 });
 
-// REORDER todos
+/**
+ * @swagger
+ * /api/todos/reorder:
+ *   put:
+ *     summary: Reorder todos
+ *     tags: [Todos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               todos:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/Todo'
+ *     responses:
+ *       200:
+ *         description: Order updated successfully
+ *       400:
+ *         description: Invalid data format
+ *       500:
+ *         description: Server error
+ */
 router.put('/reorder', async (req, res) => {
     const { todos } = req.body; // Array de todos avec les nouvelles positions
 
@@ -97,7 +270,7 @@ router.put('/reorder', async (req, res) => {
 async function getTodo(req, res, next) {
     let todo;
     try {
-        todo = await Todo.findById(req.params.id);
+        todo = await Todo.findById(req.params.id).populate('tags');
         if (todo == null) {
             return res.status(404).json({ message: 'Cannot find todo' });
         }
