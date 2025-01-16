@@ -70,6 +70,82 @@ router.get('/', async (req, res) => {
 
 /**
  * @swagger
+ * /api/todos/search:
+ *   get:
+ *     summary: Search and filter todos
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: query
+ *         name: title
+ *         schema:
+ *           type: string
+ *         description: The title of the todo
+ *       - in: query
+ *         name: completed
+ *         schema:
+ *           type: boolean
+ *         description: The completon status of the todo
+ *       - in: query
+ *         name: tag
+ *         schema:
+ *           type: string
+ *         description: The tag id
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: The page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: The number of todos per page
+ *     responses:
+ *       200:
+ *         description: The list of the filtered todos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Todo'
+ */
+router.get('/search', async (req, res) => {
+    const { title, completed, tag, page = 1, limit = 10 } = req.query;
+    const query = {};
+
+    if (title) {
+        query.title = { $regex: title, $options: 'i' };
+    }
+
+    if (completed !== undefined) {
+        query.completed = completed === 'true';
+    }
+
+    if (tag) {
+        query.tags = tag;
+    }
+
+    try {
+        const todos = await Todo.find(query)
+            .sort('position')
+            .populate('tags')
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .exec();
+        const count = await Todo.countDocuments(query);
+        res.json({
+            todos,
+            totalPages: Math.ceil(count / limit),
+            currentPage: parseInt(page)
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+/**
+ * @swagger
  * /api/todos/{id}:
  *   get:
  *     summary: Get the todo by id
