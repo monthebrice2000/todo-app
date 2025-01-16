@@ -28,12 +28,17 @@ const Tag = require('../models/Tag');
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/Tag'
+ *         priority:
+ *           type: string
+ *           enum: ['haute', 'moyenne', 'basse']
+ *           description: The priority of the todo
  *       example:
  *         id: d5fE_asz
  *         title: Buy groceries
  *         completed: false
  *         position: 1
  *         tags: []
+ *         priority: moyenne
  */
 
 /**
@@ -84,12 +89,18 @@ router.get('/', async (req, res) => {
  *         name: completed
  *         schema:
  *           type: boolean
- *         description: The completon status of the todo
+ *         description: The completion status of the todo
  *       - in: query
  *         name: tag
  *         schema:
  *           type: string
  *         description: The tag id
+ *       - in: query
+ *         name: priority
+ *         schema:
+ *           type: string
+ *           enum: ['haute', 'moyenne', 'basse']
+ *         description: The priority of the todo
  *       - in: query
  *         name: page
  *         schema:
@@ -106,12 +117,19 @@ router.get('/', async (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Todo'
+ *               type: object
+ *               properties:
+ *                 todos:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Todo'
+ *                 totalPages:
+ *                   type: integer
+ *                 currentPage:
+ *                   type: integer
  */
 router.get('/search', async (req, res) => {
-    const { title, completed, tag, page = 1, limit = 10 } = req.query;
+    const { title, completed, tag, priority, page = 1, limit = 10 } = req.query;
     const query = {};
 
     if (title) {
@@ -126,9 +144,13 @@ router.get('/search', async (req, res) => {
         query.tags = tag;
     }
 
+    if (priority) {
+        query.priority = priority;
+    }
+
     try {
         const todos = await Todo.find(query)
-            .sort('position')
+            .sort({ priority: 1, position: 1 }) // Tri par priorité et position
             .populate('tags')
             .skip((page - 1) * limit)
             .limit(parseInt(limit))
@@ -201,7 +223,8 @@ router.post('/', async (req, res) => {
         const todo = new Todo({
             title: req.body.title,
             position: newPosition,
-            tags: req.body.tags
+            tags: req.body.tags,
+            priority: req.body.priority || 'moyenne'
         });
         const newTodo = await todo.save();
         res.status(201).json(newTodo);
@@ -250,6 +273,9 @@ router.patch('/:id', getTodo, async (req, res) => {
     }
     if (req.body.tags != null) {
         res.todo.tags = req.body.tags;
+    }
+    if (req.body.priority != null) {
+        res.todo.priority = req.body.priority;
     }
     try {
         const updatedTodo = await res.todo.save();
