@@ -1,15 +1,23 @@
 <template>
   <div>
-    <form @submit.prevent="addTodo" class="flex mb-4">
+    <form @submit.prevent="addTodo" class="flex flex-col mb-4">
       <input
         v-model="newTodo"
         type="text"
         placeholder="Ajouter une tâche"
-        class="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="flex-grow px-4 py-2 border border-gray-300 rounded-t-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
+      <select
+        v-model="newPriority"
+        class="flex-grow px-4 py-2 border border-gray-300 rounded-b-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="haute">Haute</option>
+        <option value="moyenne">Moyenne</option>
+        <option value="basse">Basse</option>
+      </select>
       <button
         type="submit"
-        class="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
       >
         Ajouter
       </button>
@@ -87,6 +95,9 @@
                 {{ todo.title }}
               </span>
             </span>
+            <div :class="getPriorityClass(todo.priority)" class="px-2 py-1 rounded-full text-white">
+              {{ todo.priority }}
+            </div>
 
             <button @click.stop="deleteTodo(todo._id)" class="text-red-500 hover:text-red-700 focus:outline-none">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -157,6 +168,7 @@ export default {
     return {
       todos: [],
       newTodo: '',
+      newPriority: 'moyenne', // Priority of the new todo
       tags: [],
       selectedTags: [],
       searchQuery: '', // For search by title
@@ -190,10 +202,14 @@ export default {
       if (!this.newTodo.trim()) return;
       this.resetFilters('add');
       try {
-        const response = await axios.post('/api/todos', { title: this.newTodo });
+        const response = await axios.post('/api/todos', {
+          title: this.newTodo,
+          priority: this.newPriority,
+        });
         this.todos.push(response.data);
         this.filteredTodos = [...this.todos];
         this.newTodo = '';
+        this.newPriority = 'moyenne';
       } catch (error) {
         console.error('Erreur lors de l\'ajout de la tâche:', error);
       }
@@ -290,6 +306,18 @@ export default {
     },
     toggleTagList(todo) {
       this.activeTodo = this.activeTodo === todo._id ? null : todo._id;
+    },
+    getPriorityClass(priority) {
+      switch (priority) {
+        case 'haute':
+          return 'bg-red-500';
+        case 'moyenne':
+          return 'bg-yellow-500';
+        case 'basse':
+          return 'bg-green-500';
+        default:
+          return 'bg-gray-500';
+      }
     },
   },
   mounted() {

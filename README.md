@@ -313,19 +313,20 @@ Ce projet est une application Todo qui permet aux utilisateurs de gérer leurs t
    git clone https://github.com/monthebrice2000/todo-app.git
    cd todo-app/backend
    ```
-
-2. Installer les dépendances :
+2. Démarrer le serveur mongodb :
+   ```bash
+   docker run --name mongodb-container -d -p 27017:27017 -v mongodb-data:/data/db mongo:6.0
+   ```
+3. Installer les dépendances :
    ```bash
    npm install
    ```
-
-3. Créer un fichier `.env` avec le contenu suivant :
+4. Créer un fichier `.env` avec le contenu suivant :
    ```env
    MONGO_URI=mongodb://localhost:27017/todo-app
    PORT=5000
    ```
-
-4. Démarrer le serveur backend :
+5. Démarrer le serveur backend :
    ```bash
    npm start
    ```
@@ -367,7 +368,8 @@ Ce projet est une application Todo qui permet aux utilisateurs de gérer leurs t
 3. Utiliser le formulaire pour ajouter de nouvelles tâches.
 4. En cliquant sur chaque tâche, utiliser l'interface de gestion des tags pour créer et gérer les tags.
 5. Assigner des tags aux tâches et filtrer les tâches par tags.
-6. Utiliser les champs de recherche et les filtres pour trier les tâches soit par statut, soit par tag ou soit par titre
+6. Utiliser le champ de recherche et les filtres pour filtrer les tâches soit par statut, soit par tag ou soit par titre
+7. Utiliser le select pour choisir la priorité d'une tâche au moment de sa création
 
 ## Commentaires dans le code
 
