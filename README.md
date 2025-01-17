@@ -304,7 +304,7 @@ Ce projet est une application Todo qui permet aux utilisateurs de gérer leurs t
   - Supprime un tag.
   - **Réponse**: Message de succès.
 
-## Installation
+## Installation sans docker
 
 ### Backend
 
@@ -353,17 +353,33 @@ Ce projet est une application Todo qui permet aux utilisateurs de gérer leurs t
 1. Tests des tâches
    ```bash
    cd backend
-   npm run test todos.test.js
+   npm run test ./test/todos.test.js
    ```
 2. Tests des tags
    ```bash
    cd backend
-   npm run test tags.test.js
+   npm run test ./test/tags.test.js
    ```
+
+
+## Installation avec docker
+
+### Backend
+
+1. Cloner le dépôt :
+   ```bash
+   git clone https://github.com/monthebrice2000/todo-app.git
+   cd todo-app/backend
+   ```
+2. Démarrer les services frontend, backend et mongo:
+   ```bash
+   docker-compose up --build
+   ```
+
 
 ## Utilisation
 
-1. Ouvrir votre navigateur et naviguer vers `http://localhost:5000` pour accéder à la liste des APIs.
+1. Ouvrir votre navigateur et naviguer vers `http://localhost:5000` (si l'installation est sans docker) ou `http://localhost:5001` pour accéder à la liste des APIs.
 2. Ouvrir votre navigateur et naviguer vers `http://localhost:8080` pour accéder à l'application Todo.
 3. Utiliser le formulaire pour ajouter de nouvelles tâches.
 4. En cliquant sur chaque tâche, utiliser l'interface de gestion des tags pour créer et gérer les tags.
@@ -382,3 +398,54 @@ Ce projet est une application Todo qui permet aux utilisateurs de gérer leurs t
 ### Frontend
 
 - **components/TodoList.vue**: Contient le composant principal de la liste des tâches, y compris le formulaire pour ajouter des tâches et l'interface pour gérer les tags.
+
+## Completion
+
+**Gestion des Tags**
+ 
+**Interface utilisateur**
+
+- [x] Créer une interface pour ajouter et gérer des tags personnalisés avec des couleurs
+- [x] Permettre d'assigner plusieurs tags à une tâche
+- [x] Afficher les tags de manière visuelle dans la liste des tâches
+- [x] Implémenter un système de filtrage des tâches par tag
+
+ 
+**API et Base de données**
+
+- [x] Créer les tables nécessaires pour stocker les tags et leurs associations avec les tâches
+- [x] Implémenter les endpoints API pour la création/modification/suppression des tags
+- [x] Gérer les associations entre tags et tâches dans la base de données
+- [x] Optimiser les requêtes pour le chargement des tags et le filtrage
+
+**Filtrage et Recherche**
+
+ **Interface utilisateur**
+
+- [x] - Ajouter un champ de recherche pour filtrer les tâches par titre
+- [x] - Créer des filtres pour les tâches complétées/en cours
+- [ ] - Implémenter une interface réactive qui se met à jour en temps réel
+
+ 
+
+**API et Base de données**
+
+- [x] - Implémenter les endpoints de recherche et filtrage
+- [x] - Optimiser les requêtes avec des index appropriés
+- [x] - Gérer la pagination des résultats de recherche
+
+**Gestion des Priorités**
+ 
+**Interface utilisateur**
+
+- [x] Créer une interface pour définir la priorité des tâches (haute, moyenne, basse)
+- [ ] Implémenter le tri des tâches par priorité
+- [x] Ajouter des indicateurs visuels pour les différentes priorités
+
+ 
+
+**API et Base de données**
+
+- [x] Ajouter le champ priorité dans la table des tâches
+- [x] Créer les endpoints pour gérer les priorités
+- [x] Implémenter le tri par priorité côté serveur
