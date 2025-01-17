@@ -191,3 +191,192 @@ Supprime une tâche
 
 ## Contact
 Pour toute question ou assistance, vous pouvez utiliser le formulaire de contact dans votre espace de travail.
+
+# Todo App - Correction
+
+## Introduction
+
+Ce projet est une application Todo qui permet aux utilisateurs de gérer leurs tâches et leurs tags. L'application est construite en utilisant Node.js, Express, MongoDB pour le backend, et Vue.js pour le frontend.
+
+## Table des matières
+
+- [Schéma de la base de données](#schéma-de-la-base-de-données)
+- [Endpoints API](#endpoints-api)
+- [Installation](#installation)
+- [Utilisation](#utilisation)
+- [Commentaires dans le code](#commentaires-dans-le-code)
+
+## Schéma de la base de données
+
+### Collections
+
+#### Todos
+
+| Champ      | Type    | Description                  |
+|------------|---------|------------------------------|
+| _id        | ObjectId| Identifiant unique pour la tâche |
+| title      | String  | Titre de la tâche            |
+| completed  | Boolean | Statut de la tâche           |
+| tags       | Array   | Tableau d'ObjectIds de tags  |
+| createdAt  | Date    | Date de création de la tâche |
+| priority   | String  | Priorité de la tâche (haute, moyenne, basse) |
+
+#### Tags
+
+| Champ      | Type    | Description                  |
+|------------|---------|------------------------------|
+| _id        | ObjectId| Identifiant unique pour le tag |
+| name       | String  | Nom du tag                   |
+| color      | String  | Couleur du tag               |
+| createdAt  | Date    | Date de création du tag      |
+
+### Relations
+
+- Chaque tâche peut avoir plusieurs tags.
+- Les tags sont associés aux tâches via un tableau d'ObjectIds de tags dans le champ `tags` de la collection `Todos`.
+
+## Endpoints API
+
+### Todos
+
+- **GET /api/todos**
+  - Récupère une liste de toutes les tâches.
+  - **Réponse**: Tableau d'objets de tâches.
+
+- **POST /api/todos**
+  - Crée une nouvelle tâche.
+  - **Corps de la requête**: `{ "title": "Titre de la tâche" }`
+  - **Réponse**: L'objet de la tâche créée.
+
+- **PATCH /api/todos/:id**
+  - Met à jour une tâche.
+  - **Corps de la requête**: `{ "completed": true }`
+  - **Réponse**: L'objet de la tâche mise à jour.
+
+- **DELETE /api/todos/:id**
+  - Supprime une tâche.
+  - **Réponse**: Message de succès.
+
+- **POST /api/todos/:id/tags**
+  - Ajoute des tags à une tâche.
+  - **Corps de la requête**: `{ "tags": ["tagId1", "tagId2"] }`
+  - **Réponse**: L'objet de la tâche mise à jour.
+
+- **DELETE /api/todos/:id/tags**
+  - Supprime des tags d'une tâche.
+  - **Corps de la requête**: `{ "tags": ["tagId1", "tagId2"] }`
+  - **Réponse**: L'objet de la tâche mise à jour.
+
+- **PATCH /api/todos/:id/priority**
+  - Met à jour la priorité d'une tâche.
+  - **Corps de la requête**: `{ "priority": "haute" }`
+  - **Réponse**: L'objet de la tâche mise à jour.
+
+- **GET /api/todos/by-priority**
+  - Liste les tâches triées par priorité.
+  - **Réponse**: Tableau d'objets de tâches triées par priorité.
+
+- **GET /api/todos/filter?completed=xxx**
+  - Liste les tâches triées par statut.
+  - **Réponse**: Tableau d'objets de tâches triées par statut.
+
+- **GET /api/todos/filter?title=xxx**
+  - Liste les tâches triées par titre.
+  - **Réponse**: Tableau d'objets de tâches triées par titre.  
+
+### Tags
+
+- **GET /api/tags**
+  - Récupère une liste de tous les tags.
+  - **Réponse**: Tableau d'objets de tags.
+
+- **POST /api/tags**
+  - Crée un nouveau tag.
+  - **Corps de la requête**: `{ "name": "Nom du tag", "color": "#FFFFFF" }`
+  - **Réponse**: L'objet du tag créé.
+
+- **PATCH /api/tags/:id**
+  - Met à jour un tag.
+  - **Corps de la requête**: `{ "name": "Nouveau nom du tag", "color": "#000000" }`
+  - **Réponse**: L'objet du tag mis à jour.
+
+- **DELETE /api/tags/:id**
+  - Supprime un tag.
+  - **Réponse**: Message de succès.
+
+## Installation
+
+### Backend
+
+1. Cloner le dépôt :
+   ```bash
+   git clone https://github.com/monthebrice2000/todo-app.git
+   cd todo-app/backend
+   ```
+
+2. Installer les dépendances :
+   ```bash
+   npm install
+   ```
+
+3. Créer un fichier `.env` avec le contenu suivant :
+   ```env
+   MONGO_URI=mongodb://localhost:27017/todo-app
+   PORT=5000
+   ```
+
+4. Démarrer le serveur backend :
+   ```bash
+   npm start
+   ```
+
+### Frontend
+
+1. Naviguer vers le répertoire frontend :
+   ```bash
+   cd ../frontend
+   ```
+
+2. Installer les dépendances :
+   ```bash
+   npm install
+   ```
+
+3. Démarrer le serveur de développement frontend :
+   ```bash
+   npm run serve
+   ```
+
+## Tests Unitaires
+
+1. Tests des tâches
+   ```bash
+   cd backend
+   npm run test todos.test.js
+   ```
+2. Tests des tags
+   ```bash
+   cd backend
+   npm run test tags.test.js
+   ```
+
+## Utilisation
+
+1. Ouvrir votre navigateur et naviguer vers `http://localhost:5000` pour accéder à la liste des APIs.
+2. Ouvrir votre navigateur et naviguer vers `http://localhost:8080` pour accéder à l'application Todo.
+3. Utiliser le formulaire pour ajouter de nouvelles tâches.
+4. En cliquant sur chaque tâche, utiliser l'interface de gestion des tags pour créer et gérer les tags.
+5. Assigner des tags aux tâches et filtrer les tâches par tags.
+6. Utiliser les champs de recherche et les filtres pour trier les tâches soit par statut, soit par tag ou soit par titre
+
+## Commentaires dans le code
+
+### Backend
+
+- **server.js**: Contient la configuration principale du serveur et des middlewares. Ce fichier contient aussi les configurations swaggers pour la documentation des apis
+- **routes/todos.js**: Contient les routes pour gérer les tâches, y compris l'ajout et la suppression de tags.
+- **routes/tags.js**: Contient les routes pour gérer les tags.
+
+### Frontend
+
+- **components/TodoList.vue**: Contient le composant principal de la liste des tâches, y compris le formulaire pour ajouter des tâches et l'interface pour gérer les tags.

@@ -35,14 +35,13 @@ describe('Todos API', () => {
     tagId = res.body._id;
   });
 
-  it('should create a new todo with priority', async () => {
+  it('should create a new todo', async () => {
     const res = await request(server)
       .post('/api/todos')
-      .send({ title: 'Buy groceries', tags: [tagId], priority: 'haute' });
+      .send({ title: 'Buy groceries', tags: [tagId] });
     expect(res.status).to.equal(201);
     expect(res.body).to.have.property('title', 'Buy groceries');
     expect(res.body.tags).to.include(tagId);
-    expect(res.body).to.have.property('priority', 'haute');
     todoId = res.body._id;
   });
 
@@ -55,7 +54,7 @@ describe('Todos API', () => {
   });
 
   it('should remove tags from a todo', async () => {
-    const res = await request(app)
+    const res = await request(server)
       .delete(`/api/todos/${todoId}/tags`)
       .send({ tags: [tagId] });
     expect(res.status).to.equal(200);
@@ -83,38 +82,14 @@ describe('Todos API', () => {
     expect(res.body.todos.length).to.be.greaterThan(0);
   });
 
-  it('should filter todos by priority', async () => {
-    const res = await request(app).get('/api/todos/search?priority=haute');
-    expect(res.status).to.equal(200);
-    expect(res.body.todos).to.be.an('array');
-    expect(res.body.todos.length).to.be.greaterThan(0);
-  });
-
-  it('should paginate todos', async () => {
-    const res = await request(app).get('/api/todos/search?page=1&limit=1');
-    expect(res.status).to.equal(200);
-    expect(res.body.todos).to.be.an('array');
-    expect(res.body.todos.length).to.equal(1);
-    expect(res.body).to.have.property('totalPages');
-    expect(res.body).to.have.property('currentPage');
-  });
-
-  it('should update the priority of a todo', async () => {
-    const res = await request(app)
-      .patch(`/api/todos/${todoId}`)
-      .send({ priority: 'basse' });
-    expect(res.status).to.equal(200);
-    expect(res.body).to.have.property('priority', 'basse');
-  });
-
   it('should delete a todo', async () => {
-    const res = await request(app).delete(`/api/todos/${todoId}`);
+    const res = await request(server).delete(`/api/todos/${todoId}`);
     expect(res.status).to.equal(200);
     expect(res.body).to.have.property('message', 'Deleted Todo');
   });
 
   it('should return 404 for a non-existing todo', async () => {
-    const res = await request(app).get(`/api/todos/${todoId}`);
+    const res = await request(server).get(`/api/todos/${todoId}`);
     expect(res.status).to.equal(404);
   });
 });

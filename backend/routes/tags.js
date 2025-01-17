@@ -82,11 +82,18 @@ router.get('/', async (req, res) => {
  *         description: Bad request
  */
 router.post('/', async (req, res) => {
-    const tag = new Tag({
-        name: req.body.name,
-        color: req.body.color
-    });
     try {
+        // Vérifier si un tag avec le même nom existe déjà
+        const existingTag = await Tag.findOne({ name: req.body.name });
+        if (existingTag) {
+            return res.status(400).json({ message: 'A tag with this name already exists.' });
+        }
+
+        const tag = new Tag({
+            name: req.body.name,
+            color: req.body.color
+        });
+
         const newTag = await tag.save();
         res.status(201).json(newTag);
     } catch (err) {

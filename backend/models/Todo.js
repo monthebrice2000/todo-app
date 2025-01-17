@@ -4,7 +4,7 @@ const TodoSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true,
-        index: true
+        index: true // Ajout de l'index sur le champ title
     },
     completed: {
         type: Boolean,
@@ -17,17 +17,12 @@ const TodoSchema = new mongoose.Schema({
     tags: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tag',
-        index: true
+        index: true // Ajout de l'index sur le champ tags
     }],
-    priority: {
-        type: String,
-        enum: ['haute', 'moyenne', 'basse'],
-        default: 'moyenne'
-    },
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
 });
 
 module.exports = mongoose.model('Todo', TodoSchema);
