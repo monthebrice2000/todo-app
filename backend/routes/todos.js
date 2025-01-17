@@ -286,8 +286,7 @@ router.post('/', async (req, res) => {
         const todo = new Todo({
             title: req.body.title,
             position: newPosition,
-            tags: req.body.tags,
-            priority: req.body.priority || 'moyenne'
+            tags: req.body.tags
         });
         const newTodo = await todo.save();
         res.status(201).json(newTodo);
@@ -336,9 +335,6 @@ router.patch('/:id', getTodo, async (req, res) => {
     }
     if (req.body.tags != null) {
         res.todo.tags = req.body.tags;
-    }
-    if (req.body.priority != null) {
-        res.todo.priority = req.body.priority;
     }
     try {
         const updatedTodo = await res.todo.save();
@@ -469,7 +465,12 @@ router.post('/:id/tags', getTodo, async (req, res) => {
     }
 
     try {
-        res.todo.tags.push(...req.body.tags);
+        // Éviter les doublons en vérifiant les tags existants
+        const newTags = req.body.tags.filter(
+            tagId => !res.todo.tags.includes(tagId)
+        );
+
+        res.todo.tags.push(...newTags);
         await res.todo.save();
         res.json(res.todo);
     } catch (err) {
@@ -515,7 +516,11 @@ router.delete('/:id/tags', getTodo, async (req, res) => {
     }
 
     try {
-        res.todo.tags = res.todo.tags.filter(tag => !req.body.tags.includes(tag.toString()));
+        // Supprimer les tags uniquement s'ils existent
+        res.todo.tags = res.todo.tags.filter(
+            tag => !req.body.tags.includes(tag.toString())
+        );
+
         await res.todo.save();
         res.json(res.todo);
     } catch (err) {
