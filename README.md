@@ -369,7 +369,7 @@ Ce projet est une application Todo qui permet aux utilisateurs de gérer leurs t
 1. Cloner le dépôt :
    ```bash
    git clone https://github.com/monthebrice2000/todo-app.git
-   cd todo-app/backend
+   cd todo-app/
    ```
 2. Démarrer les services frontend, backend et mongo:
    ```bash
