@@ -15,6 +15,23 @@
       </button>
     </form>
 
+    <!-- Search Section -->
+    <div class="mb-4">
+      <h3 class="font-bold mb-2">Search by Title</h3>
+      <div class="flex items-center">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Rechercher une tâche"
+          class="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2"
+          @input="resetFilters('search')"
+          />
+        <button @click="searchTodos" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none">
+          Search
+        </button>
+      </div>
+    </div>
+
     <!-- Filter Section -->
     <div class="mb-4">
       <h3 class="font-bold mb-2">Filter by Tags</h3>
@@ -36,6 +53,21 @@
       <button @click="filterTodos" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none">
         Search
       </button>
+      <h3 class="font-bold mb-2">Filter by Completion</h3>
+      <div class="flex items-center">
+        <button
+          @click="filterCompleted(true)"
+          class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none mr-2"
+        >
+          Completed
+        </button>
+        <button
+          @click="filterCompleted(false)"
+          class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none"
+        >
+          Incomplete
+        </button>
+      </div>
     </div>
 
     <div ref="sortableList" class="space-y-2">
@@ -46,7 +78,7 @@
               <input
                 type="checkbox"
                 v-model="todo.completed"
-                @change="updateTodo(todo)"
+                @change="updateTodoCompletion(todo)"
                 class="form-checkbox h-5 w-5 text-blue-600 mr-2"
               />
               <span
@@ -63,7 +95,7 @@
             </button>
           </div>
 
-          <div v-if="activeTodo === todo._id" class="mt-2 border-t pt-2">
+          <div v-if="activeTodo === todo._id" class="mt-2 border-t pt-2" @mouseleave="updateTodoTags(todo)">
             <div class="flex items-center mb-2">
               <input
                 v-model="newTag.name"
@@ -127,6 +159,7 @@ export default {
       newTodo: '',
       tags: [],
       selectedTags: [],
+      searchQuery: '', // For search by title
       newTag: {
         name: '',
         color: '#000000',
@@ -155,13 +188,32 @@ export default {
     },
     async addTodo() {
       if (!this.newTodo.trim()) return;
+      this.resetFilters('add');
       try {
         const response = await axios.post('/api/todos', { title: this.newTodo });
         this.todos.push(response.data);
-        this.filteredTodos.push(response.data);
+        this.filteredTodos = [...this.todos];
         this.newTodo = '';
       } catch (error) {
         console.error('Erreur lors de l\'ajout de la tâche:', error);
+      }
+    },
+    async searchTodos() {
+      this.resetFilters('search');
+      try {
+        const response = await axios.get(`/api/todos/search?title=${this.searchQuery}`);
+        this.filteredTodos = response.data.todos;
+      } catch (error) {
+        console.error('Erreur lors de la recherche des tâches:', error);
+      }
+    },
+    async filterCompleted(status) {
+      this.resetFilters('filter');
+      try {
+        const response = await axios.get(`/api/todos/filter?completed=${status}`);
+        this.filteredTodos = response.data;
+      } catch (error) {
+        console.error('Erreur lors du filtrage des tâches:', error);
       }
     },
     async addTag() {
@@ -196,49 +248,57 @@ export default {
         await axios.delete(`/api/todos/${todo._id}/tags`, { data: { tags: [tag._id] } });
         todo.tags = todo.tags.filter(t => t._id !== tag._id);
       } catch (error) {
-        console.error(error);
-        this.showNotification('Erreur lors de l\'ajout de la tâche.', 'bg-red-100 text-red-700');
+        console.error('Erreur lors de la suppression du tag de la tâche:', error);
       }
     },
-    async updateTodo(todo) {
+    async updateTodoTags(todo) {
+      try {
+        await axios.post(`/api/todos/${todo._id}/tags`, { tags: todo.tags.map(t => t._id) });
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour des tags:', error);
+      }
+    },
+    filterTodos() {
+      if (this.selectedTags.length === 0) {
+        this.filteredTodos = [...this.todos];
+      } else {
+        this.filteredTodos = this.todos.filter(todo =>
+          todo.tags.some(tag => this.selectedTags.includes(tag._id))
+        );
+      }
+    },
+    resetFilters(exclude) {
+      if (exclude !== 'add') this.newTodo = '';
+      if (exclude !== 'search') this.searchQuery = '';
+      if (exclude !== 'filter') this.filteredTodos = [...this.todos];
+    },
+    async updateTodoCompletion(todo) {
       try {
         await axios.patch(`/api/todos/${todo._id}`, { completed: todo.completed });
-        this.showNotification('Tâche mise à jour.', 'bg-green-100 text-green-700');
       } catch (error) {
-        console.error(error);
-        this.showNotification('Erreur lors de la mise à jour de la tâche.', 'bg-red-100 text-red-700');
+        console.error('Erreur lors de la mise à jour de la tâche:', error);
       }
     },
     async deleteTodo(id) {
       try {
         await axios.delete(`/api/todos/${id}`);
         this.todos = this.todos.filter(todo => todo._id !== id);
-        this.showNotification('Tâche supprimée.', 'bg-green-100 text-green-700');
+        this.filteredTodos = this.filteredTodos.filter(todo => todo._id !== id);
       } catch (error) {
-        console.error(error);
-        this.showNotification('Erreur lors de la suppression de la tâche.', 'bg-red-100 text-red-700');
+        console.error('Erreur lors de la suppression de la tâche:', error);
       }
     },
     toggleTagList(todo) {
       this.activeTodo = this.activeTodo === todo._id ? null : todo._id;
     },
-    showNotification(message, className) {
-      this.notification = message;
-      this.notificationClass = className;
-      setTimeout(() => {
-        this.notification = '';
-      }, 3000);
-    }
   },
   mounted() {
     this.fetchTodos();
     this.fetchTags();
 
-    // Initialiser Sortable
     Sortable.create(this.$refs.sortableList, {
       handle: '.handle',
       animation: 150,
-      onEnd: this.onDragEnd,
     });
   },
 };
