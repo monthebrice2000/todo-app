@@ -14,15 +14,15 @@ const TodoSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
     tags: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tag',
         index: true // Ajout de l'index sur le champ tags
-    }]
+    }],
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 module.exports = mongoose.model('Todo', TodoSchema);

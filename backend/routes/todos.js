@@ -28,12 +28,17 @@ const Tag = require('../models/Tag');
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/Tag'
+ *         priority:
+ *           type: string
+ *           enum: ['haute', 'moyenne', 'basse']
+ *           description: The priority of the todo
  *       example:
  *         id: d5fE_asz
  *         title: Buy groceries
  *         completed: false
  *         position: 1
  *         tags: []
+ *         priority: moyenne
  */
 
 /**
@@ -72,7 +77,7 @@ router.get('/', async (req, res) => {
  * @swagger
  * /api/todos/search:
  *   get:
- *     summary: Search and filter todos
+ *     summary: Search and filter todos with pagination
  *     tags: [Todos]
  *     parameters:
  *       - in: query
@@ -84,12 +89,13 @@ router.get('/', async (req, res) => {
  *         name: completed
  *         schema:
  *           type: boolean
- *         description: The completon status of the todo
+ *         description: The completion status of the todo
  *       - in: query
- *         name: tag
+ *         name: priority
  *         schema:
  *           type: string
- *         description: The tag id
+ *           enum: ['haute', 'moyenne', 'basse']
+ *         description: The priority of the todo
  *       - in: query
  *         name: page
  *         schema:
@@ -106,12 +112,19 @@ router.get('/', async (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Todo'
+ *               type: object
+ *               properties:
+ *                 todos:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Todo'
+ *                 totalPages:
+ *                   type: integer
+ *                 currentPage:
+ *                   type: integer
  */
 router.get('/search', async (req, res) => {
-    const { title, completed, tag, page = 1, limit = 10 } = req.query;
+    const { title, completed, priority, page = 1, limit = 10 } = req.query;
     const query = {};
 
     if (title) {
@@ -122,13 +135,13 @@ router.get('/search', async (req, res) => {
         query.completed = completed === 'true';
     }
 
-    if (tag) {
-        query.tags = tag;
+    if (priority) {
+        query.priority = priority;
     }
 
     try {
         const todos = await Todo.find(query)
-            .sort('position')
+            .sort({ priority: 1, position: 1 }) // Tri par priorité et position
             .populate('tags')
             .skip((page - 1) * limit)
             .limit(parseInt(limit))
@@ -139,6 +152,78 @@ router.get('/search', async (req, res) => {
             totalPages: Math.ceil(count / limit),
             currentPage: parseInt(page)
         });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/todos/filter:
+ *   get:
+ *     summary: Filter todos by status
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: query
+ *         name: completed
+ *         schema:
+ *           type: boolean
+ *         description: The completion status of the todo
+ *     responses:
+ *       200:
+ *         description: The list of the filtered todos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Todo'
+ */
+router.get('/filter', async (req, res) => {
+    const { completed } = req.query;
+    const query = {};
+
+    if (completed !== undefined) {
+        query.completed = completed === 'true';
+    }
+
+    try {
+        const todos = await Todo.find(query).sort('position').populate('tags').exec();
+        res.json(todos);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/todos/by-tag/{tagId}:
+ *   get:
+ *     summary: Filter todos by tag
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: path
+ *         name: tagId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The tag id
+ *     responses:
+ *       200:
+ *         description: The list of the filtered todos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Todo'
+ */
+router.get('/by-tag/:tagId', async (req, res) => {
+    const { tagId } = req.params;
+
+    try {
+        const todos = await Todo.find({ tags: tagId }).sort('position').populate('tags').exec();
+        res.json(todos);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -201,7 +286,8 @@ router.post('/', async (req, res) => {
         const todo = new Todo({
             title: req.body.title,
             position: newPosition,
-            tags: req.body.tags
+            tags: req.body.tags,
+            priority: req.body.priority || 'moyenne'
         });
         const newTodo = await todo.save();
         res.status(201).json(newTodo);
@@ -250,6 +336,9 @@ router.patch('/:id', getTodo, async (req, res) => {
     }
     if (req.body.tags != null) {
         res.todo.tags = req.body.tags;
+    }
+    if (req.body.priority != null) {
+        res.todo.priority = req.body.priority;
     }
     try {
         const updatedTodo = await res.todo.save();
