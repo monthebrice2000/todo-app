@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const TodoSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true
+        required: true,
+        index: true // Ajout de l'index sur le champ title
     },
     completed: {
         type: Boolean,
@@ -15,7 +16,8 @@ const TodoSchema = new mongoose.Schema({
     },
     tags: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Tag'
+        ref: 'Tag',
+        index: true // Ajout de l'index sur le champ tags
     }],
     createdAt: {
         type: Date,
