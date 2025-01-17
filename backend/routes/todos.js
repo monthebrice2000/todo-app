@@ -342,6 +342,98 @@ router.put('/reorder', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/todos/{id}/tags:
+ *   post:
+ *     summary: Add tags to a todo
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The todo id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Tags added successfully
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: The todo was not found
+ */
+router.post('/:id/tags', getTodo, async (req, res) => {
+    if (!Array.isArray(req.body.tags)) {
+        return res.status(400).json({ message: 'Tags should be an array' });
+    }
+
+    try {
+        res.todo.tags.push(...req.body.tags);
+        await res.todo.save();
+        res.json(res.todo);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/todos/{id}/tags:
+ *   delete:
+ *     summary: Remove tags from a todo
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The todo id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Tags removed successfully
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: The todo was not found
+ */
+router.delete('/:id/tags', getTodo, async (req, res) => {
+    if (!Array.isArray(req.body.tags)) {
+        return res.status(400).json({ message: 'Tags should be an array' });
+    }
+
+    try {
+        res.todo.tags = res.todo.tags.filter(tag => !req.body.tags.includes(tag.toString()));
+        await res.todo.save();
+        res.json(res.todo);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
 // Middleware to get todo by ID
 async function getTodo(req, res, next) {
     let todo;
