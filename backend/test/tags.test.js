@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 describe('Tags API', () => {
   let server; // Variable to store the server instance
   let tagId; // Variable to store the ID of the created tag
-  const TEST_DB_URI = 'mongodb://localhost:27017/todo-test';
+  const TEST_DB_URI = 'mongodb://mongo:27017/todo-test';
 
   // Before all tests, start the server and connect to the test database
   before(async () => {

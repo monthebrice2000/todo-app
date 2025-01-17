@@ -9,7 +9,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
 const app = express();
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/todos';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/todos';
 
 // Swagger configuration
 const swaggerOptions = {
@@ -22,7 +22,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:5000',
+        url: 'http://backend:5001',
       },
     ],
   },

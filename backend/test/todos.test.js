@@ -5,7 +5,7 @@ const Todo = require('../models/Todo');
 const Tag = require('../models/Tag');
 const mongoose = require('mongoose');
 
-const MONGO_URI = 'mongodb://localhost:27017/todo-test';
+const MONGO_URI = 'mongodb://mongo:27017/todo-test';
 let server;
 
 describe('Todos API', () => {
@@ -35,13 +35,14 @@ describe('Todos API', () => {
     tagId = res.body._id;
   });
 
-  it('should create a new todo', async () => {
+  it('should create a new todo with priority', async () => {
     const res = await request(server)
       .post('/api/todos')
-      .send({ title: 'Buy groceries', tags: [tagId] });
+      .send({ title: 'Buy groceries', tags: [tagId], priority: 'haute' });
     expect(res.status).to.equal(201);
     expect(res.body).to.have.property('title', 'Buy groceries');
     expect(res.body.tags).to.include(tagId);
+    expect(res.body).to.have.property('priority', 'haute');
     todoId = res.body._id;
   });
 
@@ -80,6 +81,30 @@ describe('Todos API', () => {
     expect(res.status).to.equal(200);
     expect(res.body.todos).to.be.an('array');
     expect(res.body.todos.length).to.be.greaterThan(0);
+  });
+
+  it('should filter todos by priority', async () => {
+    const res = await request(app).get('/api/todos/search?priority=haute');
+    expect(res.status).to.equal(200);
+    expect(res.body.todos).to.be.an('array');
+    expect(res.body.todos.length).to.be.greaterThan(0);
+  });
+
+  it('should paginate todos', async () => {
+    const res = await request(app).get('/api/todos/search?page=1&limit=1');
+    expect(res.status).to.equal(200);
+    expect(res.body.todos).to.be.an('array');
+    expect(res.body.todos.length).to.equal(1);
+    expect(res.body).to.have.property('totalPages');
+    expect(res.body).to.have.property('currentPage');
+  });
+
+  it('should update the priority of a todo', async () => {
+    const res = await request(app)
+      .patch(`/api/todos/${todoId}`)
+      .send({ priority: 'basse' });
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('priority', 'basse');
   });
 
   it('should delete a todo', async () => {

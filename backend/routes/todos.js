@@ -236,6 +236,78 @@ router.get('/by-tag/:tagId', async (req, res) => {
 
 /**
  * @swagger
+ * /api/todos/by-priority:
+ *   get:
+ *     summary: List todos sorted by priority
+ *     tags: [Todos]
+ *     responses:
+ *       200:
+ *         description: The list of the todos sorted by priority
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Todo'
+ */
+router.get('/by-priority', async (req, res) => {
+    try {
+        const todos = await Todo.find().sort({ priority: 1, position: 1 }).populate('tags').exec();
+        res.json(todos);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/todos/{id}/priority:
+ *   patch:
+ *     summary: Update the priority of a todo
+ *     tags: [Todos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The todo id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               priority:
+ *                 type: string
+ *                 enum: ['haute', 'moyenne', 'basse']
+ *     responses:
+ *       200:
+ *         description: The priority was updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Todo'
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: The todo was not found
+ */
+router.patch('/:id/priority', getTodo, async (req, res) => {
+    if (req.body.priority != null) {
+        res.todo.priority = req.body.priority;
+    }
+    try {
+        const updatedTodo = await res.todo.save();
+        res.json(updatedTodo);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+/**
+ * @swagger
  * /api/todos/{id}:
  *   get:
  *     summary: Get the todo by id
