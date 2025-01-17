@@ -84,9 +84,3 @@ backend/.env
 
 # Ignore database files
 mongo-data/
-
-# Tests
-**/*.test.js
-
-# Components
-**/TagManager.vue

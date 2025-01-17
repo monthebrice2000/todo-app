@@ -304,7 +304,12 @@ router.post('/:id/tags', getTodo, async (req, res) => {
     }
 
     try {
-        res.todo.tags.push(...req.body.tags);
+        // Éviter les doublons en vérifiant les tags existants
+        const newTags = req.body.tags.filter(
+            tagId => !res.todo.tags.includes(tagId)
+        );
+
+        res.todo.tags.push(...newTags);
         await res.todo.save();
         res.json(res.todo);
     } catch (err) {
@@ -350,7 +355,11 @@ router.delete('/:id/tags', getTodo, async (req, res) => {
     }
 
     try {
-        res.todo.tags = res.todo.tags.filter(tag => !req.body.tags.includes(tag.toString()));
+        // Supprimer les tags uniquement s'ils existent
+        res.todo.tags = res.todo.tags.filter(
+            tag => !req.body.tags.includes(tag.toString())
+        );
+
         await res.todo.save();
         res.json(res.todo);
     } catch (err) {
