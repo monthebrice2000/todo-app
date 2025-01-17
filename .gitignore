@@ -86,7 +86,7 @@ backend/.env
 mongo-data/
 
 # Tests
-**/*.test.js
+# **/*.test.js
 
 # Components
 **/TagManager.vue
